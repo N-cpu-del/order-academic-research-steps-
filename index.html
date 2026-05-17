@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Academic Research Collocations Game</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome for Premium Classroom Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts for Editorial English Vibe -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,500&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Lexend', sans-serif;
+      background: radial-gradient(circle at 50% 50%, #f8fafc 0%, #e2e8f0 100%);
+    }
+    .title-font {
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+    .custom-shadow {
+      box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.1), 0 1px 3px rgba(15, 23, 42, 0.05);
+    }
+    .card-transition {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-slate-800 antialiased selection:bg-indigo-100">
+
+  <!-- Confetti Canvas Container for Game Completion -->
+  <div id="confetti-container" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
+
+  <!-- Top Classroom Banner -->
+  <header class="bg-white border-b border-slate-200 py-4 px-6 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+      <!-- Title & Branding -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+          <i class="fa-solid fa-graduation-cap text-lg"></i>
+        </div>
+        <div>
+          <span class="text-xs font-semibold text-indigo-600 uppercase tracking-widest">Academic Skills Lab</span>
+          <h1 class="text-xl md:text-2xl font-bold text-slate-900 title-font">Academic Research Collocations</h1>
+        </div>
+      </div>
+      
+      <!-- Actions Group -->
+      <div class="flex items-center gap-2 flex-wrap justify-center">
+        <div class="bg-indigo-50 border border-indigo-100 rounded-lg px-3.5 py-2 text-sm text-indigo-800 font-medium flex items-center gap-2">
+          <i class="fa-solid fa-list-ol"></i>
+          Ordered: <span id="progress-indicator" class="font-bold">1 / 9</span>
+        </div>
+        <button id="toggle-model-btn" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3.5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 shadow-sm">
+          <i class="fa-solid fa-eye text-indigo-600"></i> Model Answer
+        </button>
+        <button id="reset-btn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 shadow-sm">
+          <i class="fa-solid fa-rotate-left"></i> Reset
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Game Layout -->
+  <main class="max-w-3xl mx-auto px-4 py-8 flex-grow w-full space-y-6">
+    
+    <!-- Instruction Board Box -->
+    <div class="bg-gradient-to-r from-indigo-900 to-slate-900 text-white rounded-2xl p-6 md:p-8 custom-shadow relative overflow-hidden">
+      <div class="absolute -right-12 -bottom-12 w-48 h-48 bg-indigo-700 opacity-20 rounded-full blur-2xl"></div>
+      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="space-y-2">
+          <span class="bg-indigo-500/30 text-indigo-200 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">Classroom Activity</span>
+          <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">Put the Research Steps in Order</h2>
+          <p class="text-indigo-200 text-sm md:text-base leading-relaxed">
+            Step <strong class="text-white">1 (define the scope)</strong> is locked in. Click or tap the remaining steps in their logical order (from 2 to 9). Tap a numbered card to undo.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Dynamic Feedback Banner (replaces clunky game controls sidebar) -->
+    <div id="inline-status-box" class="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 text-center transition-all duration-300">
+      <p class="text-sm font-semibold text-indigo-950 flex items-center justify-center gap-2">
+        <i class="fa-regular fa-lightbulb text-indigo-600 animate-pulse"></i>
+        <span>Assign numbers to all items. Answers will evaluate automatically!</span>
+      </p>
+    </div>
+
+    <!-- Interactive Cards List -->
+    <div class="space-y-3" id="steps-container">
+      <!-- JS inserts items dynamically here -->
+    </div>
+
+    <!-- Quick Concept Guide Bar -->
+    <div class="bg-slate-100 border border-slate-200/60 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+      <p class="text-slate-500 leading-relaxed text-center sm:text-left">
+        <strong class="font-bold text-slate-700">Vocabulary Tip:</strong> Collocations are combinations of words that naturally go together (e.g., <strong class="font-semibold text-slate-800">"carry out research"</strong> instead of "make research").
+      </p>
+    </div>
+
+  </main>
+
+  <!-- Model Answer Modal (Elegant, High Contrast Overlay) -->
+  <div id="model-answer-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto custom-shadow flex flex-col">
+      <!-- Modal Header -->
+      <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-indigo-50/60 rounded-t-2xl">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
+            <i class="fa-solid fa-check-double"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 title-font">Model Answer Key</h3>
+            <p class="text-xs text-slate-500">Chronological Steps of Academic Research</p>
+          </div>
+        </div>
+        <button id="close-modal-btn" class="w-8 h-8 rounded-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-800 transition flex items-center justify-center shadow-sm">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Model Answer Ordered List -->
+      <div class="p-6 overflow-y-auto space-y-3">
+        <div class="grid grid-cols-1 gap-2.5">
+          <div class="flex items-center gap-4 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+            <span class="w-8 h-8 rounded-lg bg-emerald-600 text-white font-bold flex items-center justify-center text-sm shadow-sm shrink-0">1</span>
+            <div>
+              <p class="font-bold text-emerald-950">define the scope</p>
+              <p class="text-xs text-emerald-800">Outline the topic boundary, timelines, and primary questions.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+            <span class="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-sm shrink-0">2</span>
+            <div>
+              <p class="font-bold text-slate-950">get approval</p>
+              <p class="text-xs text-slate-600">Secure supervisor consent or ethics clearances.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+            <span class="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-sm shrink-0">3</span>
+            <div>
+              <p class="font-bold text-slate-950">do initial research</p>
+              <p class="text-xs text-slate-600">Gather backgrounds, theories, and existing studies.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+            <span class="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-sm shrink-0">4</span>
+            <div>
+              <p class="font-bold text-slate-950">design a questionnaire/ a survey</p>
+              <p class="text-xs text-slate-600">Establish standard metrics, queries, or survey outlines.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+            <span class="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-sm shrink-0">5</span>
+            <div>
+              <p class="font-bold text-slate-950">carry out my own research</p>
+              <p class="text-xs text-slate-600">Execute data collection, distribute questionnaires, or test.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+            <span class="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-sm shrink-0">6</span>
+            <div>
+              <p class="font-bold text-slate-950">analyse the data</p>
+              <p class="text-xs text-slate-600">Extract insights, evaluate responses, run statistics.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+            <span class="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-sm shrink-0">7</span>
+            <div>
+              <p class="font-bold text-slate-950">summarise the results</p>
+              <p class="text-xs text-slate-600">Condense figures and main outcomes into clear points.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+            <span class="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-sm shrink-0">8</span>
+            <div>
+              <p class="font-bold text-slate-950">draw conclusions</p>
+              <p class="text-xs text-slate-600">Discuss implications, limits, and answers to the research question.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+            <span class="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-sm shrink-0">9</span>
+            <div>
+              <p class="font-bold text-slate-950">write up the report</p>
+              <p class="text-xs text-slate-600">Synthesize everything into the final thesis or paper.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+        <button id="close-modal-btn-bottom" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-md transition">
+          Got it, Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Classroom Footer Info -->
+  <footer class="bg-white border-t border-slate-200 py-4 px-6 text-center text-xs text-slate-400">
+    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+      <p>&copy; Academic ESL Lesson Aid. Built with interactive British Council content slides.</p>
+      <p class="flex items-center gap-2">
+        <span>Press <kbd class="bg-slate-100 border px-1.5 py-0.5 rounded font-mono">Reset</kbd> to restart sequence anytime</span>
+      </p>
+    </div>
+  </footer>
+
+  <!-- App Game Logic -->
+  <script>
+    // Complete structured game dataset
+    const modelAnswers = [
+      { id: "define-scope", phrase: "define the scope", modelIndex: 1, desc: "Step 1 is pre-locked." },
+      { id: "get-approval", phrase: "get approval", modelIndex: 2 },
+      { id: "do-initial-research", phrase: "do initial research", modelIndex: 3 },
+      { id: "design-questionnaire", phrase: "design a questionnaire / a survey", modelIndex: 4 },
+      { id: "carry-out-research", phrase: "carry out my own research", modelIndex: 5 },
+      { id: "analyse-data", phrase: "analyse the data", modelIndex: 6 },
+      { id: "summarise-results", phrase: "summarise the results", modelIndex: 7 },
+      { id: "draw-conclusions", phrase: "draw conclusions", modelIndex: 8 },
+      { id: "write-report", phrase: "write up the report", modelIndex: 9 }
+    ];
+
+    // Current student order assignments. Initially only step 1 (define the scope) is set.
+    let selectedOrders = {
+      "define-scope": 1
+    };
+
+    let listPool = [];
+    let gameEnded = false;
+
+    // Sound effects fallbacks using browser synthesize api
+    const playSound = (type) => {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'select') {
+          osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+          gain.gain.setValueAtTime(0.08, ctx.currentTime);
+          osc.start();
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+          osc.stop(ctx.currentTime + 0.1);
+        } else if (type === 'deselect') {
+          osc.frequency.setValueAtTime(392.00, ctx.currentTime); // G4
+          gain.gain.setValueAtTime(0.08, ctx.currentTime);
+          osc.start();
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+          osc.stop(ctx.currentTime + 0.12);
+        } else if (type === 'success') {
+          const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+          notes.forEach((freq, idx) => {
+            const individualOsc = ctx.createOscillator();
+            const individualGain = ctx.createGain();
+            individualOsc.connect(individualGain);
+            individualGain.connect(ctx.destination);
+            individualOsc.frequency.setValueAtTime(freq, ctx.currentTime + (idx * 0.1));
+            individualGain.gain.setValueAtTime(0.05, ctx.currentTime + (idx * 0.1));
+            individualOsc.start(ctx.currentTime + (idx * 0.1));
+            individualGain.gain.exponentialRampToValueAtTime(0.005, ctx.currentTime + (idx * 0.1) + 0.3);
+            individualOsc.stop(ctx.currentTime + (idx * 0.1) + 0.35);
+          });
+        } else if (type === 'fail') {
+          osc.frequency.setValueAtTime(150.00, ctx.currentTime); // Low buzz
+          gain.gain.setValueAtTime(0.15, ctx.currentTime);
+          osc.start();
+          gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+          osc.stop(ctx.currentTime + 0.4);
+        }
+      } catch (e) {
+        // Fallback gracefully if AudioContext blocked/unsupported
+      }
+    };
+
+    // Shuffle utility
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    // Initialize game state
+    function initGame() {
+      gameEnded = false;
+      const defineScopeItem = modelAnswers.find(item => item.id === "define-scope");
+      const remainingItems = modelAnswers.filter(item => item.id !== "define-scope");
+      
+      shuffleArray(remainingItems);
+      listPool = [defineScopeItem, ...remainingItems];
+
+      selectedOrders = {
+        "define-scope": 1
+      };
+
+      renderBoard();
+      updateStatusPanel();
+    }
+
+    // Determine the next unassigned index from 2 to 9
+    function getNextAvailableIndex() {
+      const assignedValues = Object.values(selectedOrders);
+      for (let i = 2; i <= 9; i++) {
+        if (!assignedValues.includes(i)) {
+          return i;
+        }
+      }
+      return null;
+    }
+
+    // Handle Item Selection / Tapping Logic
+    function handleItemTap(itemId) {
+      if (itemId === "define-scope" || gameEnded) return;
+
+      if (selectedOrders[itemId]) {
+        // Deselecting: undoing assigning this number
+        const deselectedNum = selectedOrders[itemId];
+        delete selectedOrders[itemId];
+        playSound('deselect');
+
+        // Automatically shift back any assignments that were larger than the deselected step
+        for (const [key, val] of Object.entries(selectedOrders)) {
+          if (val > deselectedNum) {
+            selectedOrders[key] = val - 1;
+          }
+        }
+      } else {
+        // Selecting: assign the next logical number in chronological sequence
+        const nextNum = getNextAvailableIndex();
+        if (nextNum && nextNum <= 9) {
+          selectedOrders[itemId] = nextNum;
+          playSound('select');
+        }
+      }
+
+      renderBoard();
+      
+      // Auto-check once all 9 items have been sequenced
+      if (Object.keys(selectedOrders).length === 9) {
+        checkAnswers();
+      } else {
+        updateStatusPanel();
+      }
+    }
+
+    // Render interactive cards to the view
+    function renderBoard() {
+      const container = document.getElementById("steps-container");
+      container.innerHTML = "";
+
+      listPool.forEach((item) => {
+        const isSelected = selectedOrders[item.id] !== undefined;
+        const currentOrderVal = selectedOrders[item.id];
+        const isDefineScope = item.id === "define-scope";
+
+        let cardClass = "card-transition flex items-center justify-between p-4 md:p-5 rounded-2xl border bg-white cursor-pointer select-none custom-shadow ";
+        let badgeClass = "w-10 h-10 rounded-xl font-bold flex items-center justify-center transition-all duration-300 shadow-sm ";
+
+        if (isDefineScope) {
+          cardClass += "border-emerald-200 bg-emerald-50/50 cursor-default hover:shadow-sm";
+          badgeClass += "bg-emerald-600 text-white scale-110";
+        } else if (isSelected) {
+          cardClass += "border-indigo-500 bg-indigo-50/30 ring-2 ring-indigo-500/20 hover:border-indigo-600";
+          badgeClass += "bg-indigo-600 text-white scale-105";
+        } else {
+          cardClass += "border-slate-200 hover:border-slate-300 hover:bg-slate-50/80 active:scale-[0.99]";
+          badgeClass += "bg-slate-100 text-slate-400 group-hover:bg-slate-200";
+        }
+
+        // Adjust class if the game has ended / has evaluated
+        if (gameEnded) {
+          cardClass = cardClass.replace("cursor-pointer", "cursor-default");
+        }
+
+        const stepEl = document.createElement("div");
+        stepEl.className = cardClass;
+        stepEl.addEventListener("click", () => handleItemTap(item.id));
+
+        stepEl.innerHTML = `
+          <div class="flex items-center gap-4">
+            <!-- Left Number Badge -->
+            <div class="${badgeClass}">
+              ${isSelected ? currentOrderVal : '<i class="fa-solid fa-plus text-xs opacity-70"></i>'}
+            </div>
+            
+            <!-- Phrase Text Content -->
+            <div>
+              <p class="font-bold text-base md:text-lg tracking-tight ${isDefineScope ? 'text-emerald-900' : (isSelected ? 'text-indigo-950' : 'text-slate-800')}">
+                ${item.phrase}
+              </p>
+              ${isDefineScope ? '<p class="text-xs text-emerald-700">Starting Point (Locked)</p>' : (isSelected ? `<p class="text-xs text-indigo-500">Tap to remove step ${currentOrderVal}</p>` : '<p class="text-xs text-slate-400">Tap to assign step index</p>')}
+            </div>
+          </div>
+
+          <!-- Right hand action arrow or indicator -->
+          <div class="flex items-center gap-2">
+            ${isDefineScope ? `
+              <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
+                <i class="fa-solid fa-lock mr-1"></i> Locked
+              </span>
+            ` : (isSelected ? `
+              <span class="text-indigo-600 p-2 rounded-lg bg-indigo-100/40">
+                <i class="fa-solid fa-check text-sm animate-pulse"></i>
+              </span>
+            ` : `
+              <span class="text-slate-300 p-2 group-hover:text-slate-400">
+                <i class="fa-solid fa-fingerprint text-lg"></i>
+              </span>
+            `)}
+          </div>
+        `;
+
+        container.appendChild(stepEl);
+      });
+
+      // Update Header progress
+      const currentAssignedCount = Object.keys(selectedOrders).length;
+      document.getElementById("progress-indicator").innerText = `${currentAssignedCount} / 9`;
+    }
+
+    // Refresh banner information
+    function updateStatusPanel() {
+      const statusBox = document.getElementById("inline-status-box");
+      const currentCount = Object.keys(selectedOrders).length;
+      const remaining = 9 - currentCount;
+
+      statusBox.className = "p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 text-center transition-all duration-300";
+      statusBox.innerHTML = `
+        <p class="text-sm font-semibold text-indigo-950 flex items-center justify-center gap-2">
+          <i class="fa-regular fa-lightbulb text-indigo-600 animate-pulse"></i>
+          <span>Sequencing in progress... Please set the remaining <strong class="text-indigo-600">${remaining}</strong> steps!</span>
+        </p>
+      `;
+    }
+
+    // Validate the current selection against the model answer key (Auto-triggered)
+    function checkAnswers() {
+      gameEnded = true;
+      let allCorrect = true;
+
+      const container = document.getElementById("steps-container");
+      container.innerHTML = "";
+
+      listPool.forEach((item) => {
+        const selectedIndex = selectedOrders[item.id];
+        const correctIndex = item.modelIndex;
+        const isCorrect = selectedIndex === correctIndex;
+        const isDefineScope = item.id === "define-scope";
+
+        if (!isCorrect) {
+          allCorrect = false;
+        }
+
+        let cardClass = "card-transition flex items-center justify-between p-4 md:p-5 rounded-2xl border bg-white select-none custom-shadow ";
+        let badgeClass = "w-10 h-10 rounded-xl font-bold flex items-center justify-center transition-all duration-300 shadow-sm ";
+        let feedbackIcon = "";
+
+        if (isDefineScope) {
+          cardClass += "border-emerald-200 bg-emerald-50/50 cursor-default";
+          badgeClass += "bg-emerald-600 text-white scale-110";
+          feedbackIcon = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider"><i class="fa-solid fa-lock mr-1"></i> Static</span>`;
+        } else if (isCorrect) {
+          cardClass += "border-emerald-500 bg-emerald-50/40 ring-4 ring-emerald-500/10";
+          badgeClass += "bg-emerald-600 text-white";
+          feedbackIcon = `<span class="text-emerald-600 font-bold text-sm flex items-center gap-1"><i class="fa-solid fa-circle-check text-base"></i> Correct</span>`;
+        } else {
+          cardClass += "border-rose-300 bg-rose-50/30 ring-4 ring-rose-500/10";
+          badgeClass += "bg-rose-600 text-white";
+          feedbackIcon = `<div class="text-right">
+            <span class="text-rose-600 font-bold text-sm flex items-center gap-1"><i class="fa-solid fa-circle-xmark text-base"></i> Incorrect</span>
+            <p class="text-[10px] text-slate-500">Expected step: #${correctIndex}</p>
+          </div>`;
+        }
+
+        const stepEl = document.createElement("div");
+        stepEl.className = cardClass;
+        stepEl.innerHTML = `
+          <div class="flex items-center gap-4">
+            <div class="${badgeClass}">
+              ${selectedIndex || '?'}
+            </div>
+            <div>
+              <p class="font-bold text-base md:text-lg tracking-tight ${isCorrect ? 'text-emerald-950' : 'text-slate-800'}">
+                ${item.phrase}
+              </p>
+              <p class="text-xs text-slate-500">Your step selection: ${selectedIndex || 'Unassigned'}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            ${feedbackIcon}
+          </div>
+        `;
+
+        container.appendChild(stepEl);
+      });
+
+      const statusBox = document.getElementById("inline-status-box");
+
+      if (allCorrect) {
+        playSound('success');
+        triggerConfetti();
+
+        statusBox.className = "p-5 bg-gradient-to-br from-emerald-50 to-green-100 rounded-xl border border-emerald-200 text-center space-y-2 animate-bounce";
+        statusBox.innerHTML = `
+          <div class="text-emerald-600 text-3xl">
+            <i class="fa-solid fa-trophy"></i>
+          </div>
+          <p class="text-base font-extrabold text-emerald-900">Flawless 9/9 Score!</p>
+          <p class="text-xs text-emerald-700 font-medium">Excellent work! You matched the academic steps perfectly.</p>
+        `;
+      } else {
+        playSound('fail');
+        statusBox.className = "p-5 bg-rose-50 rounded-xl border border-rose-100 text-center space-y-2";
+        statusBox.innerHTML = `
+          <div class="text-rose-500 text-3xl">
+            <i class="fa-solid fa-circle-exclamation"></i>
+          </div>
+          <p class="text-sm font-bold text-rose-900">Workflow Needs Adjustment</p>
+          <p class="text-xs text-rose-700 mb-2">Some of your steps are out of logical order. Click "Reset" above to try again!</p>
+        `;
+      }
+    }
+
+    // Confetti celebration
+    function triggerConfetti() {
+      const container = document.getElementById("confetti-container");
+      container.innerHTML = "";
+      const colors = ["#4f46e5", "#10b981", "#f59e0b", "#3b82f6", "#ec4899"];
+
+      for (let i = 0; i < 75; i++) {
+        const confetti = document.createElement("div");
+        confetti.style.position = "absolute";
+        confetti.style.width = Math.random() * 8 + 6 + "px";
+        confetti.style.height = Math.random() * 15 + 8 + "px";
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.top = "-10px";
+        confetti.style.left = Math.random() * 100 + "vw";
+        confetti.style.opacity = Math.random();
+        confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+        confetti.style.borderRadius = "2px";
+
+        container.appendChild(confetti);
+
+        const duration = Math.random() * 3 + 2.5;
+        confetti.animate([
+          { transform: `translateY(0) rotate(0deg)`, opacity: 1 },
+          { transform: `translateY(105vh) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+        ], {
+          duration: duration * 1000,
+          easing: "cubic-bezier(0.25, 1, 0.50, 1)"
+        });
+
+        setTimeout(() => confetti.remove(), duration * 1000);
+      }
+    }
+
+    // Modal view handlers
+    const modal = document.getElementById("model-answer-modal");
+    const showModalBtn = document.getElementById("toggle-model-btn");
+    const closeModalBtn = document.getElementById("close-modal-btn");
+    const closeModalBtnBottom = document.getElementById("close-modal-btn-bottom");
+
+    showModalBtn.addEventListener("click", () => modal.classList.remove("hidden"));
+    closeModalBtn.addEventListener("click", () => modal.classList.add("hidden"));
+    closeModalBtnBottom.addEventListener("click", () => modal.classList.add("hidden"));
+
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) modal.classList.add("hidden");
+    });
+
+    // Reset button listeners
+    document.getElementById("reset-btn").addEventListener("click", initGame);
+
+    // Initial load handler
+    window.onload = function() {
+      initGame();
+    };
+  </script>
+</body>
+</html>
